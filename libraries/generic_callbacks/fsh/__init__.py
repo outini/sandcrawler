@@ -9,11 +9,6 @@ import fabric_wrp as __fapi
 import sc_config as __config
 import sc_common as __scc
 
-def __oncallbackload(self):
-    """ chainload submodules """
-    print "fsh __oncallbackload"
-    self.load_callbacks('fsh.fstab')
-
 def file_exists(self, filename):
     """ check if file exists """
     return __fapi.file_exists(self.srv_ip, filename)
@@ -116,14 +111,3 @@ def tar_extract(self, target, storage, files = list(),
 def make_dir(self, directory, use_sudo = True):
     """ create directory using mkdir -p """
     return __fapi.make_dir(self.srv_ip, directory, use_sudo = use_sudo)
-
-
-## FSTAB manipulation class
-# class __fstab():
-#     def load(self):
-#         print "load OK: %s" % (self)
-
-#     def write(self):
-#         print "write OK"
-
-# fstab = __fstab()

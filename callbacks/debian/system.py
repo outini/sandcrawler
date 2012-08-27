@@ -2,6 +2,7 @@
 Specifics system callbacks for Debian
 """
 
+# we import as private
 import fabric_wrp as __fapi
 
 initd_path = "/etc/init.d"

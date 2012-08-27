@@ -1,0 +1,27 @@
+SANDCRAWLER - Fabric libraries pack - README
+============================================
+
+#####################################
+# $Id$
+Author: Denis Pompilio (jawa) <denis.pompilio@gmail.org>
+Contact : Denis Pompilio (jawa) <denis.pompilio@gmail.org>
+Sources : https://github.com/outini/sandcrawler/
+#####################################
+
+This project is still in development and might be very unstable for now.
+
+I try to comment the source files and the template callbacks as much as
+thought would be enough. A full content documentation, would soon be online.
+
+What you need
+-------------
+
+It has been tested and work with:
+ * Python <=2.6
+ * Fabric 0.9.1
+ * Xen 4.0.1 (with xen-utils)
+
+License
+-------
+
+"GNU GENERAL PUBLIC LICENSE" (Version 3) (see COPYING file)

@@ -9,13 +9,13 @@ import fabric_wrp as __fapi
 import sc_config as __config
 import sc_common as __scc
 
-USERS_CONFIGFILE = "conf.d/users.conf"
-SYSUSER_DEFAULT_SHELL = "/bin/false"
+__USERS_CONFIGFILE = "users.conf"
+__SYSUSER_DEFAULT_SHELL = "/bin/false"
 
 def retrieve_config_infos(self):
     """ retrieve config info """
     caller = __scc.findcaller(2)[0]
-    config = __config.get_config(USERS_CONFIGFILE, self.systemtype)
+    config = __config.get_config(__USERS_CONFIGFILE, [self.systemtype])
     return config.get_section(caller)
 
 def user_group_ctl(self, config, context):
@@ -30,7 +30,7 @@ def user_group_ctl(self, config, context):
 def gen_pwhash(self, password):
     """ generate password hash on remote host """
     __LOG.log_d("generating password hash")
-    config = retrieve_config_infos(self)[1]
+    config = self.users.retrieve_config_infos()[1]
 
     context = {'password': password}
     ret = user_group_ctl(self, config, context)
@@ -198,7 +198,7 @@ def __check_userinfos(userinfos):
         'gid': (str, False, None),
         'groups': (list, False, None),
         'homedir': (str, False, None),
-        'shell': (str, False, SYSUSER_DEFAULT_SHELL),
+        'shell': (str, False, __SYSUSER_DEFAULT_SHELL),
         }
     return __scc.check_dict(userinfos, description)
 

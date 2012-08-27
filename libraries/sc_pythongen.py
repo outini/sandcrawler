@@ -1,96 +1,100 @@
-import fabric.api
-import os
+"""
+Simple module to display python code
+"""
 
-class PythonGenerator:
-    def __init__(self):
-        self.indent = ""
-        return None
+def set_indent(level):
+    """ set indentation """
+    return " " * level * 4
 
-    def setIndent(self, level):
-        self.indent = ""
-        numspace = level * 4
-        for i in range(0,numspace):
-            self.indent = self.indent + " "
+def dump_(name, data, level=0):
+    """ dump any types """
+    output = ""
+    if type(data).__name__ == "dict":
+        output += dump_dict(name, data, level)
+    elif type(data).__name__ == "list":
+        output += dump_list(name, data, level)
+    elif type(data).__name__ == "bool":
+        output += dump_bool(name, data, level)
+    #elif type(data).__name__ == "function":
+    #    output += self.dump_function(name, data, level)
+    #elif type(data).__name__ == "instance":
+    #    output += self.dump_instance(name, data, level)
+    else: # type(data).__name__ == "str":
+        output += dump_str(name, data, level)
 
-    def dump_(self, name, data, level=0):
-        output = ""
-        if type(data).__name__ == "dict":
-            output += self.dump_dict(name, data, level)
-        elif type(data).__name__ == "list":
-            output += self.dump_list(name, data, level)
-        elif type(data).__name__ == "bool":
-            output += self.dump_bool(name, data, level)
-        #elif type(data).__name__ == "function":
-        #    output += self.dump_function(name, data, level)
-        #elif type(data).__name__ == "instance":
-        #    output += self.dump_instance(name, data, level)
-        else: # type(data).__name__ == "str":
-            output += self.dump_str(name, data, level)
+    return output
 
-        return output
+def dump_dict(name, data, level=0):
+    """ dump dicts """
+    output = ""
+    indent = set_indent(level)
+    if len(name):
+        output += indent + name + " = "
 
-    def dump_dict(self, name, data, level=0):
-        output = ""
-        self.setIndent(level)
-        if len(name):
-            output += self.indent + name + " = "
+    output += "{\n"
+    level += 1
+    indent = set_indent(level)
 
-        output += "{\n"
-        level += 1
-        self.setIndent(level)
-            
-        for entry in data:
-            output += self.indent + "'" + str(entry) + "': "
-            output += self.dump_("", data[entry], level)
+    for entry in sorted(data):
+        output += indent + "'" + str(entry) + "': "
+        output += dump_("", data[entry], level)
 
-        level -= 1
-        self.setIndent(level)
-        if level != 0:
-            output += self.indent + "},\n"
-        else: output += self.indent + "}\n"
+    level -= 1
+    indent = set_indent(level)
+    if level != 0:
+        output += indent + "},\n"
+    else:
+        output += indent + "}\n"
 
-        return output
+    return output
 
-    def dump_str(self, name, value, level=0):
-        s = ""
-        self.setIndent(level)
-        if len(name):
-            s = self.indent + name + " = "
-        if level != 0: s += "'" + str(value) + "',"
-        else: s += "'" + str(value) + "'"
+def dump_str(name, value, level=0):
+    """ dump strings """
+    output = ""
+    indent = set_indent(level)
+    if len(name):
+        output = indent + name + " = "
+    if level != 0:
+        output += "'" + str(value) + "',"
+    else:
+        output += "'" + str(value) + "'"
 
-        return s + "\n"
+    return output + "\n"
 
-    def dump_list(self, name, data, level=0):
-        output = ""
-        list = ""
-        self.setIndent(level)
-        if len(name):
-            output += self.indent + name + " = "
+def dump_list(name, data, level=0):
+    """ dump lists """
+    output = ""
+    indent = set_indent(level)
+    if len(name):
+        output += indent + name + " = "
 
-        output += "[\n"
-        level += 1
-        self.setIndent(level)
+    output += "[\n"
+    level += 1
+    indent = set_indent(level)
 
-        for entry in data:
-            output += self.indent
-            output += self.dump_("", entry, level)
+    for entry in data:
+        output += indent
+        output += dump_("", entry, level)
 
-        level -= 1
-        self.setIndent(level)
-        if level != 0:
-            output += self.indent + "],\n"
-        else: output += self.indent + "]\n"
+    level -= 1
+    indent = set_indent(level)
+    if level != 0:
+        output += indent + "],\n"
+    else:
+        output += indent + "]\n"
 
-        return output
+    return output
 
-    def dump_bool(self, name, value, level=0):
-        bool = ""
-        self.setIndent(level)
-        if len(name):
-            bool = self.indent + name + " = "
-        if level != 1: bool += str(value) + ","
-        else: bool += str(value)
+def dump_bool(name, value, level=0):
+    """ dump booleans """
+    output = ""
+    indent = set_indent(level)
+    if len(name):
+        output = indent + name + " = "
+    if level != 1:
+        output += str(value) + ","
+    else:
+        output += str(value)
 
-        return bool + "\n"
+    return output + "\n"
 

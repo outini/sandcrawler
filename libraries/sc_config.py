@@ -2,6 +2,35 @@
 # -*- coding: iso-latin-1 -*-
 """
 configuration management for sandcrawler
+configuration files default search path is:
+    ./conf.d/
+
+Config class is inherited from ConfigParser.SafeConfigParser
+Documentation is available at:
+    http://docs.python.org/library/configparser.html
+
+methods inherited:
+    # SafeConfigParser.set(section, option, value)
+    # ConfigParser.get(section, option[, raw[, vars]])
+    # ConfigParser.items(section[, raw[, vars]])
+    # RawConfigParser.defaults()
+    # RawConfigParser.sections()
+    # RawConfigParser.add_section(section)
+    # RawConfigParser.has_section(section)
+    # RawConfigParser.options(section)
+    # RawConfigParser.has_option(section, option)
+    # RawConfigParser.read(filenames)
+    # RawConfigParser.readfp(fp[, filename])
+    # RawConfigParser.get(section, option)
+    # RawConfigParser.getint(section, option)
+    # RawConfigParser.getfloat(section, option)
+    # RawConfigParser.getboolean(section, option)
+    # RawConfigParser.items(section)
+    # RawConfigParser.set(section, option, value)
+    # RawConfigParser.write(fileobject)
+    # RawConfigParser.remove_option(section, option)
+    # RawConfigParser.remove_section(section)
+    # RawConfigParser.optionxform(option)
 """
 
 # If you're using python 2.5
@@ -21,20 +50,49 @@ import sc_logs as __LOG
 
 # store of Config classes
 CONFIG_LIST = dict()
+DEFAULT_SEARCH_PATH = "conf.d"
 
 class Config(ConfigParser.SafeConfigParser):
     """ simple class to store and use configuration """
-    def __init__(self, configfile, search_path = None):
+    def __init__(self, configfile, search_paths = list(), chainload = True):
         ConfigParser.SafeConfigParser.__init__(self)
         self.configfile = configfile
+        self.search_paths = search_paths
         self.config = None
 
-        # load configfile if found
-        # update it if necessary with system specifics (systype != None)
-        #self.update(configfile)
-        specific_config = format_configname(configfile, prefix = search_path)
-        self.read(specific_config)
-        store_config(specific_config, self)
+        self.load()
+        store_config(self.configfile, self)
+
+    def load(self):
+        """ load configuration from files """
+        # if configfile contains '/', load as full path file
+        # search_paths are disabled when using fullpath configfile
+        if "/" not in self.configfile:
+            self.read('%s/%s' % (DEFAULT_SEARCH_PATH, self.configfile))
+            self.chainload()
+        else:
+            self.read(self.configfile)
+
+        return True
+
+    def chainload(self):
+        """ chainload configuration from search paths """
+        if type(self.search_paths) != type(list()):
+            raise RuntimeError('search_paths must be a list of paths')
+
+        for path in self.search_paths:
+            # search paths are relative to DEFAULT_SEARCH_PATH
+            self.read("%s/%s/%s" % (DEFAULT_SEARCH_PATH, path,
+                                    self.configfile))
+
+        return True
+
+    def empty_config(self):
+        """ erase the whole configuration content """
+        for section in self.sections():
+            self.remove_section(section)
+
+        return True
 
     def get_section(self, section_name, default = None):
         """ get section content as a dict """
@@ -80,16 +138,17 @@ def format_configname(configfile, prefix = None):
 
     return "%s/%s" % (path, filename)
 
-def get_config(configfile, systype = None, refresh = False):
+def get_config(configfile, search_paths = list()):
     """ get Config classes by filename and prefix """
-    formated_configname = format_configname(configfile, prefix = systype)
     try:
-        if refresh:
-            raise RuntimeError("config refresh requested")
-        return CONFIG_LIST[formated_configname]
-    except (KeyError, RuntimeError):
-        __LOG.log_d("reading configfile: %s" % (formated_configname))
-        return Config(configfile, search_path = systype)
+        if search_paths != CONFIG_LIST[configfile].search_paths:
+            CONFIG_LIST[configfile].empty_config()
+            CONFIG_LIST[configfile].search_paths = search_paths
+            CONFIG_LIST[configfile].load()
+        return CONFIG_LIST[configfile]
+    except (KeyError, AttributeError):
+        __LOG.log_d("reading configfile: %s (%s)" % (configfile, search_paths))
+        return Config(configfile, search_paths = search_paths)
 
 def store_config(configfile, config_class):
     """ store config by filename """

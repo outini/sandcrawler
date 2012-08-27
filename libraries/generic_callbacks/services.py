@@ -7,12 +7,12 @@ import sc_logs as __LOG
 import fabric_wrp as __fapi
 import sc_config as __config
 
-__services_configfile = "conf.d/services.conf"
+__SERVICES_CONFIGFILE = "services.conf"
 
 def retrieve_config_infos(self, service_name, action):
     """ retrieve configuration informations for service_name/action """
     config_dict = dict()
-    config = __config.get_config(__services_configfile, self.systemtype)
+    config = __config.get_config(__SERVICES_CONFIGFILE, [self.systemtype])
 
     # trying service specific configuration, or falling back to GENERIC
     # no specific nor generic section found, nothing can be done
