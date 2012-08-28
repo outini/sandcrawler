@@ -3,8 +3,8 @@
 - callbacks system has to be refactored:
     no more branch directly on trunk (monkey patching on self...)
     every object have:
-        self.__trk => trunk class
-        self.__mom => parent class
+        self.trk => trunk class
+        self.mom => parent class
 
 - fabric wrapper (fabric_wrp) api should be an object on server class
     calls should be done like this: server.fapi.run([...])
