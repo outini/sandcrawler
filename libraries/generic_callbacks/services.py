@@ -2,14 +2,6 @@
 Generic callbacks for services
 """
 
-__docformat__ = 'restructuredtext en'
-__author__ = "Denis 'jawa' Pompilio"
-__credits__ = "Denis 'jawa' Pompilio"
-__license__ = "GPLv3"
-__maintainer__ = "Denis 'jawa' Pompilio"
-__email__ = "denis.pompilio@gmail.com"
-__status__ = "Development"
-
 # we import as private
 import sc_logs as __LOG
 import fabric_wrp as __fapi
@@ -87,7 +79,7 @@ def srvctl(self, service_name, action):
             if config['fallback'] != None:
                 out = fapiexec(self.srv_ip, config['fallback'] % (context))
                 __LOG.log_d('fallback out: %s' % (out))
-            return not out.failed
+            return (not out.failed, out)
 
     context.update({'step': 'cmd'})
     run = config['cmd'] % (context)
@@ -99,7 +91,7 @@ def srvctl(self, service_name, action):
         if config['fallback'] is not None:
             out = fapiexec(self.srv_ip, config['fallback'] % (context))
             __LOG.log_d('fallback out: %s' % (out))
-        return not out.failed
+        return (not out.failed, out)
 
     if config['post'] is not None:
         context.update({'step': 'post'})
@@ -114,7 +106,7 @@ def srvctl(self, service_name, action):
                 __LOG.log_d('fallback out: %s' % (out))
             return (not out.failed, out)
 
-    return True
+    return (not out.failed, out)
 
 def start(self, service_name):
     """ wrapper to start lambda services """
