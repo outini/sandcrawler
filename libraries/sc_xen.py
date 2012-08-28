@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # -*- coding: iso-latin-1 -*-
 """
 xen functions for sandcrawler
@@ -15,9 +14,6 @@ It must contains at least the following function and attribute:
       # received dict is a standard xen domU config converted in dict
       return str(ipaddress)
 """
-
-# If you're using python 2.5
-from __future__ import with_statement
 
 __docformat__ = 'restructuredtext en'
 __author__ = "Denis 'jawa' Pompilio"

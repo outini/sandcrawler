@@ -1,7 +1,6 @@
-#! /usr/bin/env python
 # -*- coding: iso-latin-1 -*-
 """
-fabric api wrapper
+fabric api wrapper linked to fabric v0.9.1
 """
 
 # If you're using python 2.5
@@ -18,7 +17,6 @@ __status__ = "Development"
 import fabric.api
 from fabric.context_managers import settings, hide
 from fabric.contrib.files import exists, append, contains, sed, upload_template
-
 import re
 
 def quietfab():

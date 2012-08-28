@@ -1,6 +1,15 @@
+# -*- coding: iso-latin-1 -*-
 """
 Simple module to display python code
 """
+
+__docformat__ = 'restructuredtext en'
+__author__ = "Denis 'jawa' Pompilio"
+__credits__ = "Denis 'jawa' Pompilio"
+__license__ = "GPLv3"
+__maintainer__ = "Denis 'jawa' Pompilio"
+__email__ = "denis.pompilio@gmail.com"
+__status__ = "Development"
 
 def set_indent(level):
     """ set indentation """
@@ -26,17 +35,17 @@ def dump_(name, data, level=0):
 
 def dump_dict(name, data, level=0):
     """ dump dicts """
-    output = ""
+    output = str()
     indent = set_indent(level)
     if len(name):
-        output += indent + name + " = "
+        output += "%s%s = " % (indent, name)
 
     output += "{\n"
     level += 1
     indent = set_indent(level)
 
     for entry in sorted(data):
-        output += indent + "'" + str(entry) + "': "
+        output += "%s'%s':" % (indent, str(entry))
         output += dump_("", data[entry], level)
 
     level -= 1

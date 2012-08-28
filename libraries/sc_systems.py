@@ -1,11 +1,7 @@
-#! /usr/bin/env python
 # -*- coding: iso-latin-1 -*-
 """
 systems specifics for sandcrawler
 """
-
-# If you're using python 2.5
-from __future__ import with_statement
 
 __docformat__ = 'restructuredtext en'
 __author__ = "Denis 'jawa' Pompilio"
@@ -18,7 +14,6 @@ __status__ = "Development"
 import sys
 import types
 import collections
-
 import sc_logs as LOG
 import sc_common as scc
 

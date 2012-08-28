@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # -*- coding: iso-latin-1 -*-
 """
 Generic callbacks for nginx control.

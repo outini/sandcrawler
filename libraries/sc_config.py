@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # -*- coding: iso-latin-1 -*-
 """
 configuration management for sandcrawler
@@ -32,9 +31,6 @@ methods inherited:
     # RawConfigParser.remove_section(section)
     # RawConfigParser.optionxform(option)
 """
-
-# If you're using python 2.5
-from __future__ import with_statement
 
 __docformat__ = 'restructuredtext en'
 __author__ = "Denis 'jawa' Pompilio"
