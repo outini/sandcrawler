@@ -23,6 +23,9 @@ import sc_common as scc
 ### http://docs.python.org/library/logging.html
 ###
 
+DEFAULT_CONFIG = "conf.d/logging.conf"
+DEFAULT_CONFIG_INCLUDES = "conf.d/logging.d/"
+
 class SandLogging:
     """ wrapper class to configure logging facility """
     def __init__(self):
@@ -37,7 +40,7 @@ class SandLogging:
         """ load main configuration logging.conf """
         # order of the following is important !
         # formatters have to be load before handlers
-        main_config = "conf.d/logging.conf"
+        main_config = DEFAULT_CONFIG
         self.config.read(main_config)
         self.load_additionnal_configs()
         self.__load_formatters()
@@ -45,8 +48,8 @@ class SandLogging:
         self.__load_loggers()
 
     def load_additionnal_configs(self):
-        """ load additionnal configurations logging.d/*.conf """
-        inc = "conf.d/logging.d/"
+        """ load additionnal configurations from include path """
+        inc = DEFAULT_CONFIG_INCLUDES
         for item in os.listdir(inc):
             if os.path.isfile(inc + item) and item[-5:] == ".conf":
                 self.config.read(inc + item)
