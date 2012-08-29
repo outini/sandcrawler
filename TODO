@@ -1,14 +1,6 @@
 ## TODO on sandcrawler project
 
-- callbacks system has to be refactored:
-    no more branch directly on trunk (monkey patching on self...)
-    every object have:
-        self.trk => trunk class
-        self.mom => parent class
-
-- fabric wrapper (fabric_wrp) api should be an object on server class
-    calls should be done like this: server.fapi.run([...])
-    server ip should be retrieved from server object (not an arg)
+- methods docstring have to be cleaned for a future usage of sphinx
 
 - maybe xen could become a callback instead of librarie
 - xen librarie or callbacks have to be extend with methods to:
@@ -18,6 +10,8 @@
 - nginx callbacks (to be defined)
 - apache2 callbacks (to be defined)
 - mysql callbacks (to be defined)
+
+- solr have to become a submodule of services
 - solr callbacks have to be extend with methods to:
     deploy && install it through tomcat6
     deploy && install in autonomous
