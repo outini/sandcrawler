@@ -1,6 +1,7 @@
 # -*- coding: iso-latin-1 -*-
 """
-fstab callbacks for filesystem hierarchy
+`fstab` callbacks for filesystem hierarchy
+These depend on `fsh` callbacks and are stored in `fsh.fstab`
 """
 
 __docformat__ = 'restructuredtext en'
@@ -13,14 +14,171 @@ __status__ = "Development"
 
 # we import as private,
 # only public functions and attributes are set as callback methods
-import sc_logs as __LOG
-import fabric_wrp as __fapi
+import sc_logs as __log
 import sc_config as __config
 import sc_common as __scc
 
+import sc_pythongen as pygen
+
+fstab_file = "/etc/fstab"
+syntax_fields = ['filesystem', 'mountpoint', 'type',
+                 'options', 'dump', 'pass']
+content = None
 
 def load(self):
-    print "load OK: %s" % (self)
+    """
+    Load fstab content from remote host.
+    Default fstab location is: /etc/fstab
 
-def write(self):
-    print "write OK"
+    `content` attribute is setted from the load.
+    This attribute contains for each line:
+      line number, filesystem, mountpoint, type, options, dump, pass
+
+    If content is successfully imported, method returns True, False otherwise.
+    """
+    line_num = 0
+    fields = dict()
+
+    out = self.mom.get_file_content(self.fstab_file)
+    if out.failed is True:
+        return False
+
+    for line in out.lines_clean:
+        line_num += 1
+        line_fields = { line_num: dict(zip(syntax_fields, line.split())) }
+        fields.update(line_fields)
+
+    self.content = fields
+
+    return True
+
+
+def add_entry(self, entry):
+    """
+    Add an fstab entry to the content dict.
+    The passed entry should be a dict with the following keys:
+        dump
+        filesystem
+        mountpoint
+        options
+        pass
+        type
+    These keys match the fstab file fields.
+
+    This method return a tuple with:
+        - the return boolean
+        - the dict describing the new content (or None)
+    """
+    if self.content is None:
+        return (False, None)
+
+    self.content.update({ "%s" % (len(self.content)+1): entry })
+
+    return (True, self.content)
+
+def del_entry(self, entry):
+    """
+    Delete an fstab entry to the content dict.
+    The passed entry should be a dict with one or more of the following keys:
+        dump
+        filesystem
+        mountpoint
+        options
+        pass
+        type
+    These keys match the fstab file fields.
+    The passed keys are used to match entries from the fstab content.
+    Only one entry has to match, if several match, method return False and
+    nothing is done.
+
+    This method return a tuple with:
+        - the return boolean
+        - the dict describing the deleted entry (or None)
+    """
+    if self.content is None:
+        return (False, None)
+
+    matched_entries = self.find_entry(entry)
+    if not len(matched_entries):
+        return (False, None)
+
+    if len(matched_entries) > 1:
+        __log.log_w('%s: multiple fstab entries matched' % (self.trk.hostname))
+        return (False, None)
+
+    ## removing the only one matched entry from fstab content
+    del(self.content[matched_entries.keys()[0]])
+
+    ## resort the content dict for lines number consistency
+    index = 0
+    resort_content = dict()
+    for key in sorted(self.content.keys()):
+        index += 1
+        resort_content.update({index: self.content[key]})
+    self.content = resort_content
+
+    return (True, matched_entries)
+
+def find_entry(self, entry):
+    """
+    Find all matching entries from the content dict.
+    The passed entry should be a dict with one or more of the following keys:
+        dump
+        filesystem
+        mountpoint
+        options
+        pass
+        type
+    These keys match the fstab file fields.
+    The passed keys are used to match entries from the fstab content.
+
+    This method return a dict describing the matched entries
+    """
+    matches = dict()
+    for line, fields in self.content.iteritems():
+        current, wanted = set(fields.keys()), set(entry.keys())
+        matched_keys = current.intersection(wanted)
+        matched_fields = [ key for key in matched_keys \
+                               if entry[key] == fields[key] ]
+
+        if len(matched_fields) == len(entry):
+            matches.update({line: fields})
+
+    ## method for partial match ?
+    # if not len(match_list):
+    #     return dict()
+
+    # match_list = sorted(match_list, reverse = True)
+    # best_mcount = match_list[0][0]
+    # for entry in [ key[1] for key in match_list if key[0] == best_mcount ]:
+    #     best_matches.update(entry)
+
+    return matches
+
+def write(self, backup = True):
+    """
+    write fstab content to remote host's fstab
+    If content is successfully written, method returns True, False otherwise.
+
+    This method return a tuple containing:
+      - the return boolean
+      - the content lines list written
+    """
+    if self.content is None:
+        return (False, None)
+
+    content_to_write = list()
+    for line_n in sorted(self.content.keys()):
+        merged_fields = [ self.content[line_n][key] \
+                              for key in self.syntax_fields ]
+        content_to_write.append("\t".join(merged_fields))
+
+    if backup is True:
+        out = self.mom.copy_file(self.fstab_file, "%s.bak" % self.fstab_file,
+                                 use_sudo = True)
+        if out.failed is True:
+            return (False, content_to_write)
+
+    out = self.mom.write_file(self.fstab_file, content_to_write,
+                              use_sudo = True)
+    return (not out.failed, content_to_write)
