@@ -18,9 +18,12 @@ import sc_config as __config
 __SERVICES_CONFIGFILE = "services.conf"
 
 def retrieve_config_infos(self, service_name, action):
-    """ retrieve configuration informations for service_name/action """
+    """
+    Retrieve configuration informations for service_name/action
+    See also configuration documentation for more details.
+    """
     config_dict = dict()
-    config = __config.get_config(__SERVICES_CONFIGFILE, [self.systemtype])
+    config = __config.get_config(__SERVICES_CONFIGFILE, [self.trk.systemtype])
 
     # trying service specific configuration, or falling back to GENERIC
     # no specific nor generic section found, nothing can be done
@@ -56,10 +59,15 @@ def retrieve_config_infos(self, service_name, action):
 
 def srvctl(self, service_name, action):
     """
-    control lambda services based on config files
+    Control lambda services based on configuration files.
 
-    srvctl( str(service_name), str(action) )
-    return: tupple( bool(), object/None)
+    Passed arguments types are both string and should refer to config entries.
+
+    See also configuration documentation for more details.
+
+    This method return a tuple containing:
+       - the return boolean
+       - the fabric api execution object (or None)
     """
     __LOG.log_d("action '%s' on service %s" % (action, service_name))
     config = retrieve_config_infos(self, service_name, action)
@@ -74,52 +82,56 @@ def srvctl(self, service_name, action):
         'step': None
         }
 
-    fapiexec = config['use_sudo'] and __fapi.sudo or __fapi.run
+    fapiexec = config['use_sudo'] and self.trk.fapi.sudo or self.trk.fapi.run
 
     if config['pre'] is not None:
         context.update({'step': 'pre'})
         run = config['pre'] % (context)
-        out = fapiexec(self.srv_ip, run, nocheck=True)
+        out = fapiexec(run, nocheck=True)
         __LOG.log_d('pre out: %s' % (out))
         if out.failed:
             __LOG.log_c('pre command failed: %s' % (run))
             __LOG.log_c('output message: %s' % (out))
             if config['fallback'] != None:
-                out = fapiexec(self.srv_ip, config['fallback'] % (context))
+                out = fapiexec(config['fallback'] % (context))
                 __LOG.log_d('fallback out: %s' % (out))
             return not out.failed
 
     context.update({'step': 'cmd'})
     run = config['cmd'] % (context)
-    out = fapiexec(self.srv_ip, run, nocheck=True)
+    out = fapiexec(run, nocheck=True)
     __LOG.log_d('cmd out: %s' % (out))
     if out.failed:
         __LOG.log_c('command failed: %s' % (run))
         __LOG.log_c('output message: %s' % (out))
         if config['fallback'] is not None:
-            out = fapiexec(self.srv_ip, config['fallback'] % (context))
+            out = fapiexec(config['fallback'] % (context))
             __LOG.log_d('fallback out: %s' % (out))
         return not out.failed
 
     if config['post'] is not None:
         context.update({'step': 'post'})
         run = config['post'] % (context)
-        out = fapiexec(self.srv_ip, run, nocheck = True)
+        out = fapiexec(run, nocheck = True)
         __LOG.log_d('post out: %s' % (out))
         if out.failed:
             __LOG.log_c('post command failed: %s' % (run))
             __LOG.log_c('output message: %s' % (out))
             if config['fallback'] is not None:
-                out = fapiexec(self.srv_ip, config['fallback'] % (context))
+                out = fapiexec(config['fallback'] % (context))
                 __LOG.log_d('fallback out: %s' % (out))
             return (not out.failed, out)
 
     return True
 
 def start(self, service_name):
-    """ wrapper to start lambda services """
+    """
+    wrapper of `srvctl` to start lambda services
+    """
     return srvctl(self, service_name, "start")
 
 def stop(self, service_name):
-    """ wrapper to stop lambda services """
+    """
+    wrapper of `srvctl` to stop lambda services
+    """
     return srvctl(self, service_name, "stop")
