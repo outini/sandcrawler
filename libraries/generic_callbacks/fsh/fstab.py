@@ -32,7 +32,7 @@ def load(self):
 
     `content` attribute is setted from the load.
     This attribute contains for each line:
-      line number, filesystem, mountpoint, type, options, dump, pass
+      line number, filesystem, mountpoint, type, options, dump, pass, comment
 
     If content is successfully imported, method returns True, False otherwise.
     """
@@ -43,10 +43,20 @@ def load(self):
     if out.failed is True:
         return False
 
-    for line in out.lines_clean:
+    for line in out.lines:
         line_num += 1
-        line_fields = { line_num: dict(zip(syntax_fields, line.split())) }
-        fields.update(line_fields)
+
+        ## getting commented part
+        comment = None
+        s_line = line.split('#')
+        if len(s_line) > 1:
+            comment = '#'.join(s_line[1:])
+        line = s_line[0]
+
+        fields.update({ line_num: { 'comment': comment }})
+        if len(line):
+            line_fields = dict(zip(syntax_fields, line.split()))
+            fields[line_num].update(line_fields)
 
     self.content = fields
 
@@ -64,6 +74,7 @@ def add_entry(self, entry):
         pass
         type
     These keys match the fstab file fields.
+    Optionnal key 'comment' is used to store comments
 
     This method return a tuple with:
         - the return boolean
@@ -76,7 +87,7 @@ def add_entry(self, entry):
 
     return (True, self.content)
 
-def del_entry(self, entry):
+def del_entry(self, entry, force_multiple = False):
     """
     Delete an fstab entry to the content dict.
     The passed entry should be a dict with one or more of the following keys:
@@ -102,12 +113,13 @@ def del_entry(self, entry):
     if not len(matched_entries):
         return (False, None)
 
-    if len(matched_entries) > 1:
+    if len(matched_entries) > 1 and force_multiple is False:
         __log.log_w('%s: multiple fstab entries matched' % (self.trk.hostname))
         return (False, None)
 
-    ## removing the only one matched entry from fstab content
-    del(self.content[matched_entries.keys()[0]])
+    ## removing the matched entries from fstab content
+    for key in matched_entries.keys():
+        del(self.content[key])
 
     ## resort the content dict for lines number consistency
     index = 0
@@ -155,9 +167,29 @@ def find_entry(self, entry):
 
     return matches
 
-def write(self, backup = True):
+
+def validate_entry(self, entry):
     """
-    write fstab content to remote host's fstab
+    Validate an fstab entry using syntax_fields.
+    Only the presence of each fields is checked.
+
+    Return True if success, False otherwise.
+    """
+    try:
+        [ entry[key] for key in self.syntax_fields ]
+        return True
+    except KeyError:
+        return False
+
+def __none2empty(value):
+    """Quick transform of None object in str('')"""
+    if value is None:
+        return str()
+    return value
+
+def write(self, backup = True, stdout = False):
+    """
+    Write fstab content to remote host's fstab
     If content is successfully written, method returns True, False otherwise.
 
     This method return a tuple containing:
@@ -169,9 +201,23 @@ def write(self, backup = True):
 
     content_to_write = list()
     for line_n in sorted(self.content.keys()):
-        merged_fields = [ self.content[line_n][key] \
-                              for key in self.syntax_fields ]
-        content_to_write.append("\t".join(merged_fields))
+        entry_fields = [ __none2empty(self.content[line_n].get(key)) \
+                             for key in self.syntax_fields ]
+        comment = self.content[line_n].get('comment')
+        entry = "\t".join(entry_fields).strip()
+
+        ## keep good looking file
+        comment_start = len(entry) and " #" or "#"
+        if comment is not None:
+            line = "%s%s%s" % (entry, comment_start, comment)
+        else:
+            line = entry
+
+        content_to_write.append(line)
+
+    if stdout is True:
+        print "\n".join(content_to_write)
+        return (True, content_to_write)
 
     if backup is True:
         out = self.mom.copy_file(self.fstab_file, "%s.bak" % self.fstab_file,
