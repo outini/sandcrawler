@@ -42,8 +42,10 @@ def sysguess(ipaddr):
     if out == "Linux":
         out = __fapi.run(ipaddr, 'cat /etc/issue')
         system = out.split()[0].lower()
-    else: system = out.lower()
+    else:
+        system = out.lower()
 
+    callbacks_paths = [system]
     hostname = __fapi.run(ipaddr, "hostname")
 
-    return hostname, system
+    return (hostname, system, callbacks_paths)

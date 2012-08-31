@@ -20,30 +20,29 @@ import fabric_wrp as fapi
 
 class CallBacks():
     """ class to store callbacks """
-    def __init__(self, trunk, parent, module):
+    def __init__(self, trunk, parent, module, search_paths):
         LOG.log_d("initialising Callbacks class %s" % (module))
         self.trk = trunk
         self.mom = parent
         modlist = list()
 
-        # replace OS type by generic prefix in module name
-        # "debian.system" become "generic_callbacks.system"
-        clean_mod = ".".join(module.split('.')[1:])
-        generic_module = "generic_callbacks.%s" % (clean_mod)
+        generic_module = "generic_callbacks.%s" % (module)
         LOG.log_d("generic module is %s" % (generic_module))
-
-        # add users' callbacks prefix
-        target_module = "callbacks.%s" % (module)
 
         generic_imported = self.try_import(generic_module)
         if generic_imported is not None:
             LOG.log_d("generic module successfully imported")
             modlist.extend([generic_imported])
 
-        specific_imported = self.try_import(target_module)
-        if specific_imported is not None:
-            LOG.log_d("user's module successfully imported")
-            modlist.extend([specific_imported])
+        # add users' callbacks_path prefix
+        for path in search_paths:
+            path = '.'.join(path.split('/'))
+            target_module = "callbacks.%s.%s" % (path, module)
+
+            specific_imported = self.try_import(target_module)
+            if specific_imported is not None:
+                LOG.log_d("%s successfully imported" % (target_module))
+                modlist.extend([specific_imported])
 
         if not len(modlist):
             raise ImportError("unable to import required callbacks: %s" % (
@@ -101,6 +100,7 @@ class Server:
         self.srv_ip = srv_ip
         self.hostname = None
         self.systemtype = systemtype
+        self.callbacks_paths = list()
 
         self.fapi = scc.AttStr('fapi calls wrapper')
         self.load_fapi()
@@ -143,9 +143,8 @@ class Server:
         else:
             trunk = parent.trk
 
-        target_module = "%s.%s" % (self.systemtype, callback)
-        setattr(parent, callback_name, CallBacks(trunk, parent,
-                                                 target_module))
+        setattr(parent, callback_name, CallBacks(trunk, parent, callback,
+                                                 self.callbacks_paths))
 
         return True
 
@@ -157,7 +156,7 @@ class Server:
         all invocations have to be done without the first argument (srv_ip)
         """
         for attr in dir(fapi):
-            if attr[0:2] == "__":
+            if attr[0:2] == "__" or attr == "with_statement":
                 continue
 
             module_attr = getattr(fapi, attr)
@@ -170,9 +169,9 @@ class Server:
         return True
 
 
-    def guess_system(self, systype=None):
+    def guess_system(self, systype = None):
         """ guess on system of remote target """
-        if systype == None:
+        if systype is None:
             if not self.is_up():
                 return False
 
@@ -188,9 +187,13 @@ class Server:
             requisites = sys.modules[sysinfos_mod].check_prerequisites
 
             requisites(self.srv_ip)
-            self.hostname, self.systemtype = guess(self.srv_ip)
+            (self.hostname,
+             self.systemtype,
+             self.callbacks_paths) = guess(self.srv_ip)
             LOG.log_d("system guessed as %s" % (self.systemtype))
 
-        else: self.systemtype = systype
+        else:
+            self.systemtype = systype
+            self.callbacks_paths.append(systype)
 
         return True
