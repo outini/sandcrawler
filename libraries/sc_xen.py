@@ -36,7 +36,7 @@ CURRENT_DOM0 = None
 
 class XenRaw:
     """ raw data fetcher """
-    def __init__(self, dom0_instance):
+   def __init__(self, dom0_instance):
         self.dom0_instance = dom0_instance
         self.xmlist_py_template = [
             'import sys',
@@ -53,14 +53,14 @@ class XenRaw:
         cmd_xminfo = "xm info"
         cmd_xminfo_c = "%s -c" % (cmd_xminfo)
         cmd = "%s && %s" % (cmd_xminfo, cmd_xminfo_c)
-        return fapi.sudo(self.dom0_instance.srv_ip, cmd)
+        return self.dom0_instance.fapi.sudo(cmd)
 
     def __xmlist_raw(self, xmlist_cmd):
         """ raw xm list """
         xmlist_py = list(self.xmlist_py_template)
         xmlist_py.insert(-1, "try: %s" % (xmlist_cmd))
         cmd = "python -c '%s'" % ("\n".join(xmlist_py))
-        return fapi.sudo(self.dom0_instance.srv_ip, cmd)
+        return self.dom0_instance.fapi.sudo(cmd)
 
     def xmlist_bydomu_raw(self, domu_name):
         """ raw by domu xm list """
@@ -74,7 +74,7 @@ class XenRaw:
 
     def xm_exec(self, xm_opts):
         """ Wrapper to run xm commands """
-        return fapi.sudo(self.dom0_instance.srv_ip, "xm %s" % (xm_opts))
+        return self.dom0_instance.fapi.sudo("xm %s" % (xm_opts))
 
 
 class Dom0(sc_systems.Server):
@@ -87,6 +87,7 @@ class Dom0(sc_systems.Server):
         ## using xen callbacks definitions
         self.xen = None
         self.load_callbacks("xen")
+        self.load_callbacks("fsh")
 
         self.name = name
         self.xenapi = XenRaw(self)
@@ -168,7 +169,7 @@ class Dom0(sc_systems.Server):
         log.log_d("%s: listing domUs configuration" % (self.srv_ip))
 
         # list filename *.cfg in xen config path
-        configs = fapi.list_files(self.srv_ip,
+        configs = self.fsh.list_files(self.srv_ip,
                                   "%s/*.cfg" % (self.xen.confpath_xen),
                                   full=False)
 
@@ -246,8 +247,7 @@ class DomU(sc_systems.Server):
         configfile = "%s/%s.cfg" % (self.dom0.xen.confpath_xen, self.name)
 
         if not len(config_content):
-            config = fapi.get_file_content(self.dom0.srv_ip,
-                                           configfile)
+            config = self.fsh.get_file_content(configfile)
             if config == None:
                 return False
             config = config.lines
@@ -274,8 +274,7 @@ class DomU(sc_systems.Server):
         # check if domu is auto started
         configfile_auto = "%s/auto/%s.cfg" % (self.dom0.xen.confpath_xen,
                                               self.name)
-        if fapi.file_exists(self.dom0.srv_ip,
-                            configfile_auto):
+        if self.fsh.file_exists(configfile_auto):
             self.config.auto = True
         else: self.config.auto = False
 
@@ -310,9 +309,7 @@ class DomU(sc_systems.Server):
 
         # write configuration on dom0
         filename = self.config.configfile
-        fapi.write_file(self.dom0.srv_ip,
-                        filename, file_content,
-                        use_sudo=True)
+        self.fsh.write_file(filename, file_content, use_sudo=True)
         return True
 
     def start(self):
@@ -333,7 +330,7 @@ class DomU(sc_systems.Server):
             return False
 
         # shutdown domU and return status change
-        fapi.sudo(self.srv_ip, "shutdown -h now")
+        self.fapi.sudo("shutdown -h now")
         return scc.wait_host(self.srv_ip, "DOWN", 10)
 
     def destroy(self):

@@ -99,7 +99,7 @@ def list_files(ipaddr, file_pattern,
                full = True, use_sudo = False):
     """ list matching file and display fullpath or just filename """
 
-    cmd = "ls -1 %s" % (file_pattern)
+    cmd = "ls -l %s" % (file_pattern)
     with settings(host_string = ipaddr):
         out = remote_exec(cmd, use_sudo = use_sudo, nocheck = True)
 
